@@ -1,0 +1,27 @@
+const categoryService = require('../services/category.service');
+const { clearCache } = require('../middlewares/cache.middleware');
+
+const createCategory = async (req, res, next) => {
+  try {
+    const category = await categoryService.createCategory(req.body);
+    await clearCache('categories:*');
+    res.status(201).json({ success: true, data: category });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getCategories = async (req, res, next) => {
+  try {
+    const { tree } = req.query;
+    const categories = await categoryService.getCategories(tree !== 'false');
+    res.status(200).json({ success: true, data: categories });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  createCategory,
+  getCategories
+};
