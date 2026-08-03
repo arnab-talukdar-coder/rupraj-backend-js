@@ -6,6 +6,7 @@ const DEFAULT_RATES = [
   { karat: '18k', rate: 56250 },
   { karat: '14k', rate: 43750 },
   { karat: '9k',  rate: 28125 },
+  { karat: 'silver', rate: 950 },
 ];
 
 /**
