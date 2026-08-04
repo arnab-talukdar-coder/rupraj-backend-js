@@ -46,15 +46,50 @@ const getGoldRate = async () => {
 };
 
 /**
+ * Record today's history entry for a given karat and rate
+ */
+const recordHistory = async (karat, rate) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Standardize karat display format if needed (e.g., '22k' -> '22 Karat')
+  const karatNameMap = {
+    '9k': '9 Karat',
+    '14k': '14 Karat',
+    '18k': '18 Karat',
+    '22k': '22 Karat',
+    '24k': '24 Karat'
+  };
+  const normalizedKarat = karatNameMap[karat.toLowerCase()] || karat;
+
+  await prisma.goldRateHistory.upsert({
+    where: {
+      karat_date: {
+        karat: normalizedKarat,
+        date: today
+      }
+    },
+    update: { rate: parseFloat(rate) },
+    create: {
+      karat: normalizedKarat,
+      rate: parseFloat(rate),
+      date: today
+    }
+  });
+};
+
+/**
  * Update a single karat rate.
  */
 const updateGoldRate = async (karat, rate) => {
   const parsedRate = parseFloat(rate);
-  return await prisma.goldRate.upsert({
+  const updated = await prisma.goldRate.upsert({
     where: { karat },
     update: { rate: parsedRate },
     create: { karat, rate: parsedRate },
   });
+  await recordHistory(karat, parsedRate);
+  return updated;
 };
 
 /**
@@ -62,24 +97,67 @@ const updateGoldRate = async (karat, rate) => {
  * @param {Object} rates - e.g. { '22k': 152000, '18k': 125000, ... }
  */
 const bulkUpdateGoldRates = async (rates) => {
-  const promises = Object.entries(rates).map(([karat, rate]) =>
-    prisma.goldRate.upsert({
+  const promises = Object.entries(rates).map(async ([karat, rate]) => {
+    const floatRate = parseFloat(rate);
+    await prisma.goldRate.upsert({
       where: { karat },
-      update: { rate: parseFloat(rate) },
-      create: { karat, rate: parseFloat(rate) },
-    })
-  );
+      update: { rate: floatRate },
+      create: { karat, rate: floatRate },
+    });
+    await recordHistory(karat, floatRate);
+  });
   await Promise.all(promises);
   return getGoldRate();
+};
+
+/**
+ * Seed initial 30-day history if table is empty
+ */
+const seedHistoryIfEmpty = async () => {
+  const count = await prisma.goldRateHistory.count();
+  if (count > 0) return;
+
+  const currentRatesData = await getGoldRate();
+  const currentRates = currentRatesData.rates || {};
+
+  const karats = ['9 Karat', '14 Karat', '18 Karat', '22 Karat', '24 Karat'];
+  const baseRates = {
+    '9 Karat': currentRates['9k'] || 6000,
+    '14 Karat': currentRates['14k'] || 9000,
+    '18 Karat': currentRates['18k'] || 11500,
+    '22 Karat': currentRates['22k'] || 14200,
+    '24 Karat': currentRates['24k'] || 15500
+  };
+
+  const today = new Date();
+
+  for (let i = 29; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    date.setHours(0, 0, 0, 0);
+
+    for (const karat of karats) {
+      const fluctuation = Math.floor(Math.random() * 200) - 100;
+      const trend = (30 - i) * 10;
+      const rate = Math.round(baseRates[karat] + fluctuation + trend);
+
+      await prisma.goldRateHistory.create({
+        data: { karat, rate, date }
+      });
+    }
+  }
 };
 
 /**
  * Get gold rate history for a specific number of days.
  */
 const getGoldRateHistory = async (days = 30) => {
+  await seedHistoryIfEmpty();
+
   const fromDate = new Date();
   fromDate.setDate(fromDate.getDate() - days);
-  
+  fromDate.setHours(0, 0, 0, 0);
+
   const records = await prisma.goldRateHistory.findMany({
     where: {
       date: { gte: fromDate }
