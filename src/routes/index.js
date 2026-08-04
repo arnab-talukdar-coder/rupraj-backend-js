@@ -12,8 +12,8 @@ const wishlistRoutes = require('./wishlist.routes');
 const reviewRoutes = require('./review.routes');
 
 router.use('/auth', authRoutes);
-router.use('/categories', categoryRoutes);
-router.use('/products', productRoutes);
+router.use(['/categories', '/category'], categoryRoutes);
+router.use(['/products', '/product'], productRoutes);
 router.use('/cart', cartRoutes);
 router.use('/orders', orderRoutes);
 router.use('/gold-rate', goldRateRoutes);

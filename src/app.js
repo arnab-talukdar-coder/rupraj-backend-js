@@ -34,14 +34,14 @@ const authLimiter = rateLimit({
   message: 'Too many login attempts, please try again after 15 minutes'
 });
 
-app.use('/api', limiter);
-app.use('/api/auth', authLimiter);
+app.use(['/api', '/rj/api'], limiter);
+app.use(['/api/auth', '/rj/api/auth'], authLimiter);
 
 app.use(express.json());
 app.use(morgan('dev'));
 
 // Routes
-app.use('/api', routes);
+app.use(['/api', '/rj/api'], routes);
 
 // 404 Handler
 app.use((req, res, next) => {

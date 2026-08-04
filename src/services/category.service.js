@@ -15,7 +15,21 @@ const updateCategory = async (id, data) => {
 
 const deleteCategory = async (id) => {
   const catId = parseInt(id, 10);
-  
+  if (isNaN(catId)) {
+    const err = new Error('Invalid category ID');
+    err.status = 400;
+    throw err;
+  }
+
+  const existing = await prisma.category.findUnique({
+    where: { id: catId }
+  });
+  if (!existing) {
+    const err = new Error('Category not found');
+    err.status = 404;
+    throw err;
+  }
+
   // Check if products exist for this category
   const productCount = await prisma.product.count({
     where: { categoryId: catId }
