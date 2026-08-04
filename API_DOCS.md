@@ -1,7 +1,7 @@
 # Rupraj Jewellery E-commerce API Documentation
 
 This documentation is designed to be comprehensive and "AI-friendly," providing explicit schemas, types, and example responses for seamless frontend integration.
-
+##
 ## Table of Contents
 - [General Information](#general-information)
 - [Authentication](#authentication)
