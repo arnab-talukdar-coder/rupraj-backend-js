@@ -58,9 +58,10 @@ const recordHistory = async (karat, rate) => {
     '14k': '14 Karat',
     '18k': '18 Karat',
     '22k': '22 Karat',
-    '24k': '24 Karat'
+    '24k': '24 Karat',
+    'silver': 'Silver'
   };
-  const normalizedKarat = karatNameMap[karat.toLowerCase()] || karat;
+  const normalizedKarat = karatNameMap[karat.toLowerCase().trim()] || karat;
 
   await prisma.goldRateHistory.upsert({
     where: {

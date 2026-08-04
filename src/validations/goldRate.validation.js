@@ -1,20 +1,22 @@
 const { z } = require('zod');
 
-const VALID_KARATS = ['24k', '22k', '18k', '14k', '9k', 'silver'];
-
-// Legacy & multi-rate update schema
+// Multi-rate & legacy update schema
 const updateGoldRateSchema = z.object({
-  // Multi-rate payload: { rates: { '22k': 152000, 'silver': 950, ... } }
+  // Multi-rate payload: { rates: { '22k': 152000, 'silver': 951, ... } }
   rates: z.record(
-    z.enum(['24k', '22k', '18k', '14k', '9k', 'silver']),
-    z.number().positive('Each rate must be a positive number')
+    z.string(),
+    z.union([z.number(), z.string()]).transform(val => parseFloat(val)).refine(val => !isNaN(val) && val > 0, {
+      message: 'Each rate must be a positive number'
+    })
   ).optional(),
 
   // Legacy single-rate payload: { rate: 152000 }
-  rate: z.number().positive('Gold rate must be a positive number').optional(),
+  rate: z.union([z.number(), z.string()]).transform(val => parseFloat(val)).refine(val => !isNaN(val) && val > 0, {
+    message: 'Gold rate must be a positive number'
+  }).optional(),
 
-  // Optional karat when using legacy mode (defaults to 22k in controller)
-  karat: z.enum(['24k', '22k', '18k', '14k', '9k', 'silver']).optional(),
+  // Optional karat when using legacy mode
+  karat: z.string().optional(),
 }).refine(
   (data) => data.rates !== undefined || data.rate !== undefined,
   { message: 'Either "rates" (object) or "rate" (number) must be provided' }
@@ -22,5 +24,4 @@ const updateGoldRateSchema = z.object({
 
 module.exports = {
   updateGoldRateSchema,
-  VALID_KARATS,
 };
