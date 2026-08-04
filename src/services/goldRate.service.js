@@ -26,13 +26,10 @@ const seedDefaultRates = async () => {
  * Get all karat rates as { rate (22k value), rates: { karat -> rate } }
  */
 const getGoldRate = async () => {
-  let records = await prisma.goldRate.findMany({ orderBy: { karat: 'asc' } });
+  // Ensure default karat & metal records (including silver) exist in DB
+  await seedDefaultRates();
 
-  // Self-seed if empty
-  if (!records || records.length === 0) {
-    await seedDefaultRates();
-    records = await prisma.goldRate.findMany({ orderBy: { karat: 'asc' } });
-  }
+  const records = await prisma.goldRate.findMany({ orderBy: { karat: 'asc' } });
 
   const rates = {};
   for (const r of records) {
